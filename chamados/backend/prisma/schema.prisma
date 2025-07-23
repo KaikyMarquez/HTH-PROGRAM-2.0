@@ -8,30 +8,32 @@ datasource db {
 }
 
 model User {
-  id       Int      @id @default(autoincrement())
+  id       Int     @id @default(autoincrement())
   name     String
-  email    String   @unique
+  email    String  @unique
   password String
-  role     String   // 'admin', 'tecnico', 'visualizador'
+  role     Role
+  tickets  Ticket[]
 }
 
-model Chamado {
+model Ticket {
   id        Int      @id @default(autoincrement())
-  cliente   String
-  estande   String
-  problema  String
-  local     String
-  status    String   @default("aberto") // 'aberto', 'em_andamento', 'resolvido'
+  title     String
+  status    Status   @default(ABERTO)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  tecnicoId Int?
-  tecnico   User?    @relation(fields: [tecnicoId], references: [id])
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id])
 }
 
-model Evento {
-  id        Int      @id @default(autoincrement())
-  nome      String
-  local     String
-  data      DateTime
-  chamados  Chamado[]
+enum Role {
+  ADMIN
+  TECNICO
+  VISUALIZADOR
+}
+
+enum Status {
+  ABERTO
+  ANDAMENTO
+  FECHADO
 }
