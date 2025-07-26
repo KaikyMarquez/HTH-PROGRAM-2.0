@@ -1,6 +1,9 @@
-// src/components/DashboardPage.jsx
+// frontend/src/components/DashboardPage.jsx
 
 import React, { useState, useEffect, useMemo } from 'react';
+import io from 'socket.io-client';
+
+const socket = io('http://localhost:3001');
 
 function DashboardPage() {
   const [tickets, setTickets] = useState([]);
@@ -13,68 +16,78 @@ function DashboardPage() {
     return userData ? JSON.parse(userData) : null;
   }, []);
 
-  const fetchTickets = async () => {
-    // ... (esta função continua a mesma)
-    const token = localStorage.getItem('authToken');
-    if (!token) {
-      setError('Nenhum token de autenticação encontrado.');
-      setLoading(false); return;
-    }
-    try {
-      const response = await fetch('http://localhost:3001/api/tickets', {
-        headers: { 'Authorization': `Bearer ${token}` },
-      });
-      if (!response.ok) throw new Error('Falha ao buscar os chamados.');
-      const data = await response.json();
-      setTickets(data);
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   useEffect(() => {
+    const fetchTickets = async () => {
+      const token = localStorage.getItem('authToken');
+      if (!token) {
+        setError('Nenhum token de autenticação encontrado.');
+        setLoading(false); return;
+      }
+      try {
+        const response = await fetch('http://localhost:3001/api/tickets', {
+          headers: { 'Authorization': `Bearer ${token}` },
+        });
+        if (!response.ok) throw new Error('Falha ao buscar os chamados.');
+        const data = await response.json();
+        setTickets(data);
+      } catch (err) {
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
+    };
     fetchTickets();
   }, []);
 
+  useEffect(() => {
+    socket.on('connect', () => console.log('✅ Conectado ao servidor de WebSocket:', socket.id));
+
+    socket.on('ticketUpdated', (updatedTicket) => {
+      setTickets(prevTickets => {
+        const ticketExists = prevTickets.find(t => t.id === updatedTicket.id);
+        if (ticketExists) {
+          return prevTickets.map(t => t.id === updatedTicket.id ? updatedTicket : t);
+        } else {
+          return [updatedTicket, ...prevTickets];
+        }
+      });
+    });
+
+    socket.on('ticketDeleted', (deletedTicket) => {
+      setTickets(prevTickets => prevTickets.filter(t => t.id !== deletedTicket.id));
+    });
+
+    return () => {
+      socket.off('connect');
+      socket.off('ticketUpdated');
+      socket.off('ticketDeleted');
+    };
+  }, []);
+
   const handleCreateTicket = async (e) => {
-    // ... (esta função continua a mesma)
     e.preventDefault();
     if (!newTicketTitle.trim()) return;
     const token = localStorage.getItem('authToken');
     try {
-      const response = await fetch('http://localhost:3001/api/tickets', {
+      await fetch('http://localhost:3001/api/tickets', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
         body: JSON.stringify({ title: newTicketTitle }),
       });
-      if (!response.ok) throw new Error('Erro ao criar o chamado.');
       setNewTicketTitle('');
-      fetchTickets();
     } catch (err) {
       setError(err.message);
     }
   };
 
-  // NOVA FUNÇÃO: Para atualizar o status de um chamado
   const handleUpdateStatus = async (ticketId, newStatus) => {
     const token = localStorage.getItem('authToken');
     try {
-      const response = await fetch(`http://localhost:3001/api/tickets/${ticketId}`, {
+      await fetch(`http://localhost:3001/api/tickets/${ticketId}`, {
         method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
         body: JSON.stringify({ status: newStatus }),
       });
-      if (!response.ok) throw new Error('Erro ao atualizar o status.');
-      
-      fetchTickets(); // Atualiza a lista para refletir a mudança
     } catch (err) {
       setError(err.message);
     }
@@ -89,12 +102,10 @@ function DashboardPage() {
         <h1 className="text-4xl font-bold">Painel de Chamados</h1>
       </header>
       
-      {/* Formulário de criação continua o mesmo... */}
       {user && user.role === 'ADMIN' && (
         <div className="mb-8 rounded-lg bg-slate-800 p-6">
           <form onSubmit={handleCreateTicket} className="flex gap-4">
-            <input type="text" value={newTicketTitle} onChange={(e) => setNewTicketTitle(e.target.value)}
-              placeholder="Título do novo chamado" className="flex-grow rounded bg-gray-700 p-2 text-white focus:outline-none focus:ring-2 focus:ring-emerald-500" />
+            <input type="text" value={newTicketTitle} onChange={(e) => setNewTicketTitle(e.target.value)} placeholder="Título do novo chamado" className="flex-grow rounded bg-gray-700 p-2 text-white focus:outline-none focus:ring-2 focus:ring-emerald-500" />
             <button type="submit" className="rounded bg-emerald-600 px-6 py-2 font-bold text-white transition hover:bg-emerald-700">Criar</button>
           </form>
         </div>
@@ -113,21 +124,10 @@ function DashboardPage() {
                 </div>
               </div>
 
-              {/* NOVOS BOTÕES: Ações de status (só aparecem para ADMIN e TECNICO) */}
               {user && (user.role === 'ADMIN' || user.role === 'TECNICO') && (
                 <div className="mt-6 flex gap-2 border-t border-slate-700 pt-4">
-                  {ticket.status === 'ABERTO' && (
-                    <button onClick={() => handleUpdateStatus(ticket.id, 'ANDAMENTO')}
-                      className="flex-1 rounded bg-yellow-600 px-3 py-1 text-xs font-bold transition hover:bg-yellow-700">
-                      Iniciar
-                    </button>
-                  )}
-                  {ticket.status === 'ANDAMENTO' && (
-                    <button onClick={() => handleUpdateStatus(ticket.id, 'FECHADO')}
-                      className="flex-1 rounded bg-green-600 px-3 py-1 text-xs font-bold transition hover:bg-green-700">
-                      Fechar Chamado
-                    </button>
-                  )}
+                  {ticket.status === 'ABERTO' && (<button onClick={() => handleUpdateStatus(ticket.id, 'ANDAMENTO')} className="flex-1 rounded bg-yellow-600 px-3 py-1 text-xs font-bold transition hover:bg-yellow-700">Iniciar</button>)}
+                  {ticket.status === 'ANDAMENTO' && (<button onClick={() => handleUpdateStatus(ticket.id, 'FECHADO')} className="flex-1 rounded bg-green-600 px-3 py-1 text-xs font-bold transition hover:bg-green-700">Fechar Chamado</button>)}
                 </div>
               )}
             </div>
