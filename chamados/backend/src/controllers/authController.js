@@ -1,58 +1,77 @@
-// Em backend/src/controllers/authController.js
+// backend/src/controllers/authController.js
+
 const { PrismaClient } = require('@prisma/client');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 
 const prisma = new PrismaClient();
 
-// 👇 ADICIONE ESTA NOVA FUNÇÃO
 const register = async (req, res) => {
   const { name, email, password, role } = req.body;
 
-  // Validação básica
   if (!name || !email || !password) {
     return res.status(400).json({ error: 'Nome, email e senha são obrigatórios.' });
   }
-
   try {
-    // Verifica se o email já existe
     const existingUser = await prisma.user.findUnique({ where: { email } });
     if (existingUser) {
-      return res.status(409).json({ error: 'Este email já está em uso.' }); // 409 Conflict
+      return res.status(409).json({ error: 'Este email já está em uso.' });
     }
-
-    // Criptografa a senha
     const hashedPassword = await bcrypt.hash(password, 10);
-
-    // Cria o usuário no banco de dados
-    // Por padrão, novos usuários serão 'TECNICO'. Você pode mudar essa lógica se quiser.
     const user = await prisma.user.create({
       data: {
         name,
         email,
         password: hashedPassword,
-        role: role || 'TECNICO', // Se nenhuma role for enviada, define como TECNICO
+        role: role || 'TECNICO',
       },
     });
-
-    // Remove a senha da resposta por segurança
     const { password: _, ...userWithoutPassword } = user;
-
     res.status(201).json({ message: 'Usuário criado com sucesso!', user: userWithoutPassword });
-
   } catch (error) {
     console.error("Erro no registro:", error);
     res.status(500).json({ error: 'Erro interno do servidor.' });
   }
 };
 
-
+// CÓDIGO CORRETO E COMPLETO PARA A FUNÇÃO DE LOGIN
 const login = async (req, res) => {
-  // ... sua função de login existente ...
+  const { email, password } = req.body;
+
+  if (!email || !password) {
+    return res.status(400).json({ message: 'Email e senha são obrigatórios.' });
+  }
+  try {
+    const user = await prisma.user.findUnique({ where: { email } });
+    if (!user) {
+      return res.status(401).json({ message: 'Credenciais inválidas.' });
+    }
+
+    const isPasswordValid = await bcrypt.compare(password, user.password);
+    if (!isPasswordValid) {
+      return res.status(401).json({ message: 'Credenciais inválidas.' });
+    }
+
+    const token = jwt.sign(
+      { userId: user.id, role: user.role },
+      process.env.JWT_SECRET,
+      { expiresIn: '8h' }
+    );
+    
+    const { password: _, ...userWithoutPassword } = user;
+
+    res.status(200).json({
+      message: 'Login bem-sucedido!',
+      token,
+      user: userWithoutPassword,
+    });
+  } catch (error) {
+    console.error('Erro no login:', error);
+    res.status(500).json({ message: 'Erro interno do servidor.' });
+  }
 };
 
-
 module.exports = {
-  register, // Exporte a nova função
+  register,
   login,
 };
