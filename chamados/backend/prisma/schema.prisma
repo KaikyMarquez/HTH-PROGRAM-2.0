@@ -8,12 +8,14 @@ datasource db {
 }
 
 model User {
-  id       Int     @id @default(autoincrement())
-  name     String
-  email    String  @unique
+  id    Int     @id @default(autoincrement())
+  name  String
+  email String  @unique
   password String
-  role     Role
-  tickets  Ticket[]
+  role  Role
+
+  createdTickets Ticket[] @relation("CreatedTickets")
+  handledTickets Ticket[] @relation("HandledTickets")
 }
 
 model Ticket {
@@ -22,8 +24,12 @@ model Ticket {
   status    Status   @default(ABERTO)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
   userId    Int
-  user      User     @relation(fields: [userId], references: [id])
+  user      User     @relation("CreatedTickets", fields: [userId], references: [id])
+
+  technicianId Int?
+  technician   User?    @relation("HandledTickets", fields: [technicianId], references: [id])
 }
 
 enum Role {

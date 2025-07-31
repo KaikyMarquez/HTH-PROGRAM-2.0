@@ -1,13 +1,20 @@
-// src/components/TicketCard.jsx
-
 import React from 'react';
 
 function TicketCard({ ticket, user, onUpdateStatus, onDelete, urgencyClass }) {
+  const canCloseTicket = user && (user.role === 'ADMIN' || user.userId === ticket.technicianId);
+
   return (
     <div className={`flex flex-col rounded-lg p-6 shadow-md ${urgencyClass}`}>
       <div className="flex-grow">
         <h2 className="mb-2 text-xl font-bold text-emerald-400">{ticket.title}</h2>
-        <p className="mb-4 text-sm text-gray-400">Criado por: {ticket.user.name}</p>
+        
+        <div className="mb-4 text-sm text-gray-400">
+          <p>Criado por: {ticket.user?.name || '...'}</p>
+          {ticket.technician && (
+            <p className="font-bold">Atendido por: {ticket.technician.name}</p>
+          )}
+        </div>
+
         <div className="flex justify-between">
           <span className="text-xs font-semibold">{ticket.status}</span>
           <span className="text-xs text-gray-500">{new Date(ticket.createdAt).toLocaleDateString('pt-BR')}</span>
@@ -27,7 +34,9 @@ function TicketCard({ ticket, user, onUpdateStatus, onDelete, urgencyClass }) {
           {ticket.status === 'ANDAMENTO' && (
             <button
               onClick={() => onUpdateStatus(ticket.id, 'FECHADO')}
-              className="flex-1 rounded bg-green-600 px-3 py-1 text-xs font-bold transition hover:bg-green-700"
+              disabled={!canCloseTicket}
+              className="flex-1 rounded bg-green-600 px-3 py-1 text-xs font-bold transition hover:bg-green-700 disabled:cursor-not-allowed disabled:bg-gray-500"
+              title={!canCloseTicket ? "Apenas o técnico responsável ou um admin pode fechar" : ""}
             >
               Fechar Chamado
             </button>
