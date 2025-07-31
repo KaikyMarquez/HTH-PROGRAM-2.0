@@ -11,20 +11,30 @@ const getTickets = async (req, res) => {
   res.json(tickets);
 };
 
+// backend/src/controllers/ticketController.js
+
 const createTicket = async (req, res) => {
   const { title } = req.body;
-  const userId = req.user.id;
+  const userId = req.user.userId; // <-- CORREÇÃO APLICADA AQUI
+
   try {
     const ticket = await prisma.ticket.create({
-      data: { title, userId },
+      data: {
+        title,
+        userId,
+      },
       include: { user: true }
     });
+    
     req.io.emit('ticketUpdated', ticket);
     res.status(201).json(ticket);
+
   } catch (err) {
+    console.error('--- Controller: ERRO FATAL ao criar chamado ---', err);
     res.status(400).json({ error: 'Erro ao criar chamado', details: err });
   }
 };
+
 
 const updateTicketStatus = async (req, res) => {
   const { id } = req.params;
