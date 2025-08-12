@@ -1,11 +1,11 @@
 // frontend/src/components/DashboardPage.jsx
 
 import React, { useState, useEffect, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import io from 'socket.io-client';
 import TicketCard from './TicketCard';
 
-const socket = io('http://localhost:3001');
+const socket = io(import.meta.env.VITE_API_URL);
 
 function DashboardPage() {
   // Estados existentes
@@ -15,101 +15,176 @@ function DashboardPage() {
   const [newTicketTitle, setNewTicketTitle] = useState('');
   const [currentTime, setCurrentTime] = useState(new Date());
 
-  // NOVOS ESTADOS para o formulário de registro de usuário
-  const [regName, setRegName] = useState('');
-  const [regEmail, setRegEmail] = useState('');
-  const [regPassword, setRegPassword] = useState('');
-  const [regRole, setRegRole] = useState('TECNICO'); // Valor padrão
-  const [regFeedback, setRegFeedback] = useState({ message: '', type: '' });
-
   const navigate = useNavigate();
   const user = useMemo(() => {
     const userData = localStorage.getItem('user');
     return userData ? JSON.parse(userData) : null;
   }, []);
 
-  useEffect(() => { const timer = setInterval(() => { setCurrentTime(new Date()); }, 60000); return () => clearInterval(timer); }, []);
-  useEffect(() => { const fetchTickets = async () => { const token = localStorage.getItem('authToken'); if (!token) { setError('Nenhum token...'); setLoading(false); return; } try { const response = await fetch('http://localhost:3001/api/tickets', { headers: { 'Authorization': `Bearer ${token}` } }); if (!response.ok) throw new Error('Falha...'); const data = await response.json(); setTickets(data); } catch (err) { setError(err.message); } finally { setLoading(false); } }; fetchTickets(); }, []);
-  useEffect(() => { socket.on('connect', () => console.log('✅ Conectado')); socket.on('ticketUpdated', (updatedTicket) => { setTickets(prev => { const exists = prev.find(t => t.id === updatedTicket.id); if (exists) { return prev.map(t => t.id === updatedTicket.id ? updatedTicket : t); } else { new Audio('/sounds/notification.mp3').play(); return [updatedTicket, ...prev]; } }); }); socket.on('ticketDeleted', (deletedTicket) => { setTickets(prev => prev.filter(t => t.id !== deletedTicket.id)); }); return () => { socket.off('connect'); socket.off('ticketUpdated'); socket.off('ticketDeleted'); }; }, []);
-  const handleCreateTicket = async (e) => { e.preventDefault(); if (!newTicketTitle.trim()) return; const token = localStorage.getItem('authToken'); try { await fetch('http://localhost:3001/api/tickets', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify({ title: newTicketTitle }), }); setNewTicketTitle(''); } catch (err) { setError(err.message); } };
-  const handleUpdateStatus = async (ticketId, newStatus) => { const token = localStorage.getItem('authToken'); try { await fetch(`http://localhost:3001/api/tickets/${ticketId}`, { method: 'PUT', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify({ status: newStatus }), }); } catch (err) { setError(err.message); } };
-  const handleDeleteTicket = async (ticketId) => { if (!window.confirm('Tem certeza?')) return; const token = localStorage.getItem('authToken'); try { await fetch(`http://localhost:3001/api/tickets/${ticketId}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${token}` } }); } catch (err) { setError(err.message); } };
-  const handleLogout = () => { localStorage.clear(); navigate('/login'); };
-  
-  const handleRegister = async (e) => {
+  // Efeito para atualizar a hora atual a cada minuto, para a lógica de urgência
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentTime(new Date());
+    }, 60000); // 1 minuto
+    return () => clearInterval(timer);
+  }, []);
+
+  // Efeito para buscar os chamados iniciais quando o componente carrega
+  useEffect(() => {
+    const fetchTickets = async () => {
+      const token = localStorage.getItem('authToken');
+      if (!token) {
+        setError('Nenhum token de autenticação encontrado.');
+        setLoading(false);
+        return;
+      }
+      try {
+        const response = await fetch(`${import.meta.env.VITE_API_URL}/api/tickets`, {
+          headers: { 'Authorization': `Bearer ${token}` },
+        });
+        if (!response.ok) throw new Error('Falha ao buscar os chamados.');
+        const data = await response.json();
+        setTickets(data);
+      } catch (err) {
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchTickets();
+  }, []);
+
+  // Efeito para configurar os listeners do Socket.IO
+  useEffect(() => {
+    socket.on('connect', () => console.log('✅ Conectado ao WebSocket'));
+
+    socket.on('ticketUpdated', (updatedTicket) => {
+      setTickets(prevTickets => {
+        const ticketExists = prevTickets.find(t => t.id === updatedTicket.id);
+        if (ticketExists) {
+          return prevTickets.map(t => t.id === updatedTicket.id ? updatedTicket : t);
+        } else {
+          new Audio('/sounds/notification.mp3').play();
+          return [updatedTicket, ...prevTickets];
+        }
+      });
+    });
+
+    socket.on('ticketDeleted', (deletedTicket) => {
+      setTickets(prevTickets => prevTickets.filter(t => t.id !== deletedTicket.id));
+    });
+
+    return () => {
+      socket.off('connect');
+      socket.off('ticketUpdated');
+      socket.off('ticketDeleted');
+    };
+  }, []);
+
+  const handleCreateTicket = async (e) => {
     e.preventDefault();
-    setRegFeedback({ message: '', type: '' });
+    if (!newTicketTitle.trim()) return;
     const token = localStorage.getItem('authToken');
     try {
-      const response = await fetch('http://localhost:3001/api/auth/register', {
+      await fetch(`${import.meta.env.VITE_API_URL}/api/tickets`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-        body: JSON.stringify({ name: regName, email: regEmail, password: regPassword, role: regRole })
+        body: JSON.stringify({ title: newTicketTitle }),
       });
-      const data = await response.json();
-      if (!response.ok) { throw new Error(data.error || 'Erro ao criar usuário.'); }
-      setRegFeedback({ message: `Usuário '${regName}' criado com sucesso!`, type: 'success' });
-      setRegName(''); setRegEmail(''); setRegPassword('');
+      setNewTicketTitle('');
     } catch (err) {
-      setRegFeedback({ message: err.message, type: 'error' });
+      setError(err.message);
     }
   };
 
-  // AQUI É ONDE 'currentTime' É USADA
-  const getTicketUrgencyClass = (createdAt, status) => {
-    if (status !== 'ABERTO') { return 'bg-slate-800'; }
+  const handleUpdateStatus = async (ticketId, newStatus) => {
+    const token = localStorage.getItem('authToken');
+    try {
+      await fetch(`${import.meta.env.VITE_API_URL}/api/tickets/${ticketId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ status: newStatus }),
+      });
+    } catch (err) {
+      setError(err.message);
+    }
+  };
+
+  const handleDeleteTicket = async (ticketId) => {
+    if (!window.confirm('Tem certeza que deseja excluir este chamado?')) return;
+    const token = localStorage.getItem('authToken');
+    try {
+      await fetch(`${import.meta.env.VITE_API_URL}/api/tickets/${ticketId}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` },
+      });
+    } catch (err) {
+      setError(err.message);
+    }
+  };
+
+  const handleLogout = () => {
+    localStorage.clear();
+    navigate('/login');
+  };
+
+  const getTicketUrgencyStyle = (createdAt, status) => {
+    // Se o chamado não estiver aberto, ele tem uma cor de fundo padrão e não precisa de mais cálculos.
+    if (status !== 'ABERTO') {
+      return { backgroundColor: '#666666' }; // Cor cinza escuro (slate-800)
+    }
     const minutesAgo = (currentTime.getTime() - new Date(createdAt).getTime()) / 60000;
-    if (minutesAgo < 15) { return 'bg-green-500/20'; }
-    else if (minutesAgo <= 30) { return 'bg-yellow-500/20'; }
-    else { return 'bg-red-500/20'; }
+    
+    // NOTA: Tempos reduzidos para facilitar o teste. Mude para 15 e 30 minutos em produção.
+    if (minutesAgo < 15) { return { backgroundColor: '#065f46' }; } // Verde (emerald-800)
+    else if (minutesAgo <= 20) { return { backgroundColor: '#b45309' }; } // Amarelo (amber-700)
+    else { return { backgroundColor: '#991b1b' }; } // Vermelho (red-800)
   };
 
   if (loading) return <div className="flex min-h-screen items-center justify-center bg-gray-900 text-white">Carregando...</div>;
   if (error) return <div className="flex min-h-screen items-center justify-center bg-gray-900 text-red-500">{error}</div>;
 
   return (
-    <div className="min-h-screen bg-gray-900 p-8 text-white">
-      <header className="mb-8 flex items-center justify-between">
+    <div className="min-h-screen bg-slate-900 p-4 text-white sm:p-6 lg:p-8">
+      <header className="mb-8 flex flex-wrap items-center justify-between gap-4 border-b border-slate-700 pb-6">
         <h1 className="text-4xl font-bold">Painel de Chamados</h1>
-        <button onClick={handleLogout} className="rounded bg-red-600 px-4 py-2 font-bold text-white transition hover:bg-red-700">Sair</button>
+        <nav className="flex items-center gap-4">
+          {user && user.role === 'ADMIN' && (
+            <Link to="/register-user" className="flex items-center gap-2 rounded-md bg-blue-600 px-4 py-2 font-semibold text-white transition hover:bg-blue-700">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z" /></svg>
+              Gerenciar Usuários
+            </Link>
+          )}
+          <button onClick={handleLogout} className="flex items-center gap-2 rounded-md bg-red-600 px-4 py-2 font-semibold text-white transition hover:bg-red-700">
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M3 3a1 1 0 00-1 1v12a1 1 0 102 0V4a1 1 0 00-1-1zm10.293 9.293a1 1 0 001.414 1.414l3-3a1 1 0 000-1.414l-3-3a1 1 0 10-1.414 1.414L14.586 9H7a1 1 0 100 2h7.586l-1.293 1.293z" clipRule="evenodd" /></svg>
+            Sair
+          </button>
+        </nav>
       </header>
       
       {user && user.role === 'ADMIN' && (
-        <section className="mb-12 grid grid-cols-1 gap-10 lg:grid-cols-2">
-          <div className="rounded-lg bg-slate-800 p-6">
-            <h3 className="mb-4 text-xl font-bold">Criar Novo Chamado</h3>
-            <form onSubmit={handleCreateTicket} className="flex gap-4">
-              <input type="text" value={newTicketTitle} onChange={(e) => setNewTicketTitle(e.target.value)} placeholder="Título do chamado" className="flex-grow rounded bg-gray-700 p-2 text-white focus:outline-none focus:ring-2 focus:ring-emerald-500" />
-              <button type="submit" className="rounded bg-emerald-600 px-6 py-2 font-bold text-white transition hover:bg-emerald-700">Criar</button>
-            </form>
-          </div>
-          <div className="rounded-lg bg-slate-800 p-6">
-            <h3 className="mb-4 text-xl font-bold">Cadastrar Novo Usuário</h3>
-            <form onSubmit={handleRegister}>
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                <input required type="text" placeholder="Nome" value={regName} onChange={(e) => setRegName(e.target.value)} className="rounded bg-gray-700 p-2 text-white" />
-                <input required type="email" placeholder="Email" value={regEmail} onChange={(e) => setRegEmail(e.target.value)} className="rounded bg-gray-700 p-2 text-white" />
-                <input required type="password" placeholder="Senha" value={regPassword} onChange={(e) => setRegPassword(e.target.value)} className="rounded bg-gray-700 p-2 text-white" />
-                <select value={regRole} onChange={(e) => setRegRole(e.target.value)} className="rounded bg-gray-700 p-2 text-white">
-                  <option value="TECNICO">Técnico</option>
-                  <option value="ADMIN">Admin</option>
-                  <option value="VISUALIZADOR">Visualizador</option>
-                </select>
+        <section className="mb-12">
+          <div className="rounded-lg bg-slate-800/50 p-6 shadow-lg">
+            <h3 className="mb-4 text-xl font-bold text-emerald-400">Criar Novo Chamado</h3>
+            <form onSubmit={handleCreateTicket} className="flex flex-col gap-4 sm:flex-row">
+              <div className="relative flex-grow">
+                <span className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3"><svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-400" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clipRule="evenodd" /></svg></span>
+                <input type="text" value={newTicketTitle} onChange={(e) => setNewTicketTitle(e.target.value)} placeholder="Descreva o problema ou solicitação..." className="w-full rounded-md border-transparent bg-slate-700 py-3 pl-10 pr-4 text-white placeholder-gray-400 focus:border-emerald-500 focus:ring-emerald-500" />
               </div>
-              <button type="submit" className="mt-4 w-full rounded bg-blue-600 py-2 font-bold text-white transition hover:bg-blue-700">Cadastrar Usuário</button>
-              {regFeedback.message && (
-                <p className={`mt-4 text-center text-sm ${regFeedback.type === 'success' ? 'text-green-400' : 'text-red-400'}`}>
-                  {regFeedback.message}
-                </p>
-              )}
+              <button type="submit" className="flex-shrink-0 rounded-md bg-emerald-600 px-6 py-2 font-bold text-white shadow-md transition hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 focus:ring-offset-slate-900">
+                Criar Chamado
+              </button>
             </form>
           </div>
         </section>
       )}
       
-      <main className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-        {tickets.map(ticket => ( <TicketCard key={ticket.id} ticket={ticket} user={user} onUpdateStatus={handleUpdateStatus} onDelete={handleDeleteTicket} urgencyClass={getTicketUrgencyClass(ticket.createdAt, ticket.status)} /> ))}
-      </main>
+      <section>
+        <h2 className="mb-6 text-2xl font-semibold text-gray-300">Visão Geral dos Chamados</h2>
+        <main className="flex flex-wrap gap-6">
+          {tickets.map(ticket => ( <TicketCard key={ticket.id} ticket={ticket} user={user} onUpdateStatus={handleUpdateStatus} onDelete={handleDeleteTicket} urgencyStyle={getTicketUrgencyStyle(ticket.createdAt, ticket.status)} /> ))}
+        </main>
+      </section>
     </div>
   );
 }

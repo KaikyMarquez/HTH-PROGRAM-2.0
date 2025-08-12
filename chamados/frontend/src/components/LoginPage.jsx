@@ -1,14 +1,14 @@
 // frontend/src/components/LoginPage.jsx
 
 import { useState } from 'react';
-// 1. O 'useNavigate' não é mais necessário aqui. Removido.
+import { useNavigate } from 'react-router-dom';
 
 function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  // 2. Não precisamos mais inicializar o navigate.
+  const navigate = useNavigate();
 
   const handleSubmit = async (event) => {
     event.preventDefault(); 
@@ -16,7 +16,7 @@ function LoginPage() {
     setLoading(true);
 
     try {
-      const response = await fetch('http://localhost:3001/api/auth/login', {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password }),
@@ -31,8 +31,7 @@ function LoginPage() {
       localStorage.setItem('authToken', data.token);
       localStorage.setItem('user', JSON.stringify(data.user));
 
-      // 3. A MUDANÇA PRINCIPAL: Usamos o comando direto do navegador
-      window.location.href = '/dashboard';
+      navigate('/dashboard');
 
     } catch (err) {
       setError(err.message);

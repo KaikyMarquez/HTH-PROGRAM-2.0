@@ -14,8 +14,8 @@ const server = http.createServer(app);
 
 const io = new Server(server, {
   cors: {
-    origin: "http://localhost:5173", // URL do seu frontend
-    methods: ["GET", "POST", "PUT", "DELETE"]
+    origin: "*", // Permite conexões de qualquer origem na sua rede
+    methods: ["GET", "POST", "PUT", "DELETE"],
   }
 });
 
@@ -41,6 +41,6 @@ io.on('connection', (socket) => {
 });
 
 const PORT = process.env.PORT || 3001;
-server.listen(PORT, () => {
-  console.log(`🚀 Servidor rodando na porta ${PORT}`);
+server.listen(PORT, '0.0.0.0', () => {
+  console.log(`🚀 Servidor rodando na porta ${PORT} e acessível na rede`);
 });

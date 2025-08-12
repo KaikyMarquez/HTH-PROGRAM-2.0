@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import io from 'socket.io-client';
 
-const socket = io('http://localhost:3001');
+const socket = io(import.meta.env.VITE_API_URL);
 
 function TVPage() {
   const [tickets, setTickets] = useState([]);
@@ -19,7 +19,7 @@ function TVPage() {
         setLoading(false); return;
       }
       try {
-        const response = await fetch('http://localhost:3001/api/tickets', { headers: { 'Authorization': `Bearer ${token}` } });
+        const response = await fetch(`${import.meta.env.VITE_API_URL}/api/tickets`, { headers: { 'Authorization': `Bearer ${token}` } });
         if (!response.ok) throw new Error('Falha ao buscar os chamados.');
         const data = await response.json();
         setTickets(data);
