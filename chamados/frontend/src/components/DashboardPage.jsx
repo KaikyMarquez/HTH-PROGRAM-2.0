@@ -12,7 +12,6 @@ function DashboardPage() {
   const [tickets, setTickets] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [newTicketTitle, setNewTicketTitle] = useState('');
   const [currentTime, setCurrentTime] = useState(new Date());
 
   const navigate = useNavigate();
@@ -81,22 +80,6 @@ function DashboardPage() {
     };
   }, []);
 
-  const handleCreateTicket = async (e) => {
-    e.preventDefault();
-    if (!newTicketTitle.trim()) return;
-    const token = localStorage.getItem('authToken');
-    try {
-      await fetch(`${import.meta.env.VITE_API_URL}/api/tickets`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-        body: JSON.stringify({ title: newTicketTitle }),
-      });
-      setNewTicketTitle('');
-    } catch (err) {
-      setError(err.message);
-    }
-  };
-
   const handleUpdateStatus = async (ticketId, newStatus) => {
     const token = localStorage.getItem('authToken');
     try {
@@ -150,10 +133,16 @@ function DashboardPage() {
         <h1 className="text-4xl font-bold">Painel de Chamados</h1>
         <nav className="flex items-center gap-4">
           {user && user.role === 'ADMIN' && (
-            <Link to="/register-user" className="flex items-center gap-2 rounded-md bg-blue-600 px-4 py-2 font-semibold text-white transition hover:bg-blue-700">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z" /></svg>
-              Gerenciar Usuários
-            </Link>
+            <>
+              <Link to="/create-ticket" className="flex items-center gap-2 rounded-md bg-emerald-600 px-4 py-2 font-semibold text-white transition hover:bg-emerald-700">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clipRule="evenodd" /></svg>
+                Criar Chamado
+              </Link>
+              <Link to="/register-user" className="flex items-center gap-2 rounded-md bg-blue-600 px-4 py-2 font-semibold text-white transition hover:bg-blue-700">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z" /></svg>
+                Gerenciar Usuários
+              </Link>
+            </>
           )}
           <button onClick={handleLogout} className="flex items-center gap-2 rounded-md bg-red-600 px-4 py-2 font-semibold text-white transition hover:bg-red-700">
             <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M3 3a1 1 0 00-1 1v12a1 1 0 102 0V4a1 1 0 00-1-1zm10.293 9.293a1 1 0 001.414 1.414l3-3a1 1 0 000-1.414l-3-3a1 1 0 10-1.414 1.414L14.586 9H7a1 1 0 100 2h7.586l-1.293 1.293z" clipRule="evenodd" /></svg>
@@ -161,23 +150,6 @@ function DashboardPage() {
           </button>
         </nav>
       </header>
-      
-      {user && user.role === 'ADMIN' && (
-        <section className="mb-12">
-          <div className="rounded-lg bg-slate-800/50 p-6 shadow-lg">
-            <h3 className="mb-4 text-xl font-bold text-emerald-400">Criar Novo Chamado</h3>
-            <form onSubmit={handleCreateTicket} className="flex flex-col gap-4 sm:flex-row">
-              <div className="relative flex-grow">
-                <span className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3"><svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-400" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clipRule="evenodd" /></svg></span>
-                <input type="text" value={newTicketTitle} onChange={(e) => setNewTicketTitle(e.target.value)} placeholder="Descreva o problema ou solicitação..." className="w-full rounded-md border-transparent bg-slate-700 py-3 pl-10 pr-4 text-white placeholder-gray-400 focus:border-emerald-500 focus:ring-emerald-500" />
-              </div>
-              <button type="submit" className="flex-shrink-0 rounded-md bg-emerald-600 px-6 py-2 font-bold text-white shadow-md transition hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 focus:ring-offset-slate-900">
-                Criar Chamado
-              </button>
-            </form>
-          </div>
-        </section>
-      )}
       
       <section>
         <h2 className="mb-6 text-2xl font-semibold text-gray-300">Visão Geral dos Chamados</h2>

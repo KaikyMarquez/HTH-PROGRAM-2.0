@@ -5,6 +5,7 @@ import DashboardPage from './components/DashboardPage';
 import ProtectedRoute from './components/ProtectedRoute';
 import TVPage from './components/TVPage';
 import RegisterUserPage from './components/RegisterUserPage';
+import CreateTicketPage from './components/CreateTicketPage';
 import UnauthorizedPage from './components/UnauthorizedPage';
 
 function App() {
@@ -17,14 +18,36 @@ function App() {
         <Route path="/unauthorized" element={<UnauthorizedPage />} />
 
         {/* Rotas Protegidas */}
-        <Route path="/dashboard" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
-        <Route path="/tv" element={<ProtectedRoute><TVPage /></ProtectedRoute>} />
+        <Route 
+          path="/dashboard" 
+          element={
+            <ProtectedRoute allowedRoles={['ADMIN', 'TECNICO', 'VISUALIZADOR']}>
+              <DashboardPage />
+            </ProtectedRoute>
+          } 
+        />
+        <Route 
+          path="/tv" 
+          element={
+            <ProtectedRoute allowedRoles={['ADMIN', 'TECNICO', 'VISUALIZADOR']}>
+              <TVPage />
+            </ProtectedRoute>
+          } 
+        />
         <Route 
           path="/register-user" 
           element={
             <ProtectedRoute allowedRoles={['ADMIN']}>
               <RegisterUserPage />
-            </ProtectedRoute>} 
+            </ProtectedRoute>}
+        />
+        <Route
+          path="/create-ticket"
+          element={
+            <ProtectedRoute allowedRoles={['ADMIN']}>
+              <CreateTicketPage />
+            </ProtectedRoute>
+          }
         />
       </Routes>
     </BrowserRouter>
