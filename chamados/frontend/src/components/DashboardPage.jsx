@@ -129,26 +129,26 @@ function DashboardPage() {
 
   return (
     <div className="min-h-screen bg-slate-900 p-4 text-white sm:p-6 lg:p-8">
-      <header className="mb-8 flex flex-wrap items-center justify-between gap-4 border-b border-slate-700 pb-6">
+      <header className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b border-slate-700 pb-6">
         <h1 className="text-4xl font-bold">Painel de Chamados</h1>
-        <nav className="flex items-center gap-4">
+        <div className="flex items-center gap-2 rounded-lg bg-slate-800 p-1">
           {user && user.role === 'ADMIN' && (
             <>
-              <Link to="/create-ticket" className="flex items-center gap-2 rounded-md bg-emerald-600 px-4 py-2 font-semibold text-white transition hover:bg-emerald-700">
+              <Link to="/create-ticket" className="flex items-center gap-2 rounded-md bg-emerald-600 px-3 py-2 text-sm font-semibold text-white transition hover:bg-emerald-700">
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clipRule="evenodd" /></svg>
                 Criar Chamado
               </Link>
-              <Link to="/register-user" className="flex items-center gap-2 rounded-md bg-blue-600 px-4 py-2 font-semibold text-white transition hover:bg-blue-700">
+              <Link to="/manage-users" className="flex items-center gap-2 rounded-md bg-blue-600 px-3 py-2 text-sm font-semibold text-white transition hover:bg-blue-700">
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z" /></svg>
                 Gerenciar Usuários
               </Link>
             </>
           )}
-          <button onClick={handleLogout} className="flex items-center gap-2 rounded-md bg-red-600 px-4 py-2 font-semibold text-white transition hover:bg-red-700">
+          <button onClick={handleLogout} className="flex items-center gap-2 rounded-md bg-slate-700 px-3 py-2 text-sm font-semibold text-white transition hover:bg-red-600">
             <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M3 3a1 1 0 00-1 1v12a1 1 0 102 0V4a1 1 0 00-1-1zm10.293 9.293a1 1 0 001.414 1.414l3-3a1 1 0 000-1.414l-3-3a1 1 0 10-1.414 1.414L14.586 9H7a1 1 0 100 2h7.586l-1.293 1.293z" clipRule="evenodd" /></svg>
             Sair
           </button>
-        </nav>
+        </div>
       </header>
       
       <section>

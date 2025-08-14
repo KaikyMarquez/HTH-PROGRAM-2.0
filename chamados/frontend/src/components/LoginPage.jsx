@@ -80,6 +80,7 @@ function LoginPage() {
                 className="w-full mt-1 rounded border-2 border-white bg-white px-3 text-black placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-orange-500 h-[73px]"
               />
             </div>
+<br />
 
             {/* Password */}
             <div className="mb-6 text-left">

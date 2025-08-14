@@ -4,8 +4,9 @@ import LoginPage from './components/LoginPage';
 import DashboardPage from './components/DashboardPage';
 import ProtectedRoute from './components/ProtectedRoute';
 import TVPage from './components/TVPage';
-import RegisterUserPage from './components/RegisterUserPage';
+import ManageUsersPage from './components/ManageUsersPage';
 import CreateTicketPage from './components/CreateTicketPage';
+import EditUserPage from './components/EditUserPage';
 import UnauthorizedPage from './components/UnauthorizedPage';
 
 function App() {
@@ -34,12 +35,21 @@ function App() {
             </ProtectedRoute>
           } 
         />
-        <Route 
-          path="/register-user" 
+<Route
+ path="/manage-users" // <-- Mude o caminho
+ element={
+   <ProtectedRoute allowedRoles={['ADMIN']}>
+     <ManageUsersPage />
+   </ProtectedRoute>
+ }
+/>
+        <Route
+          path="/edit-user/:id"
           element={
             <ProtectedRoute allowedRoles={['ADMIN']}>
-              <RegisterUserPage />
-            </ProtectedRoute>}
+              <EditUserPage />
+            </ProtectedRoute>
+          }
         />
         <Route
           path="/create-ticket"

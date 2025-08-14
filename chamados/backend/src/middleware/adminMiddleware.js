@@ -8,3 +8,5 @@ const adminMiddleware = (req, res, next) => {
     res.status(403).json({ error: 'Acesso negado. Rota exclusiva para administradores.' });
   }
 };
+
+module.exports = adminMiddleware;
