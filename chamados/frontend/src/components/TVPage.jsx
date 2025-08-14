@@ -68,7 +68,14 @@ function TVPage() {
         <ul className="space-y-6">
           {activeTickets.map(ticket => (
             <li key={ticket.id} className="flex items-center justify-between rounded-lg bg-gray-800 p-6">
-              <span className="text-5xl font-medium">{ticket.title}</span>
+              <div className="flex-grow">
+                <p className="text-3xl">
+                  <span className="font-bold text-sky-400">EVENTO:</span> <span className="font-semibold text-white">{ticket.eventName}</span>
+                </p>
+                <p className="mt-2 text-5xl">
+                  <span className="font-bold text-sky-400">ESTANDE:</span> <span className="font-semibold text-emerald-400">{ticket.standName}</span>
+                </p>
+              </div>
               <span className={`rounded-full px-6 py-3 text-3xl font-bold
                 ${ticket.status === 'ABERTO' ? 'bg-red-600 text-white' : ''}
                 ${ticket.status === 'ANDAMENTO' ? 'bg-yellow-500 text-black' : ''}

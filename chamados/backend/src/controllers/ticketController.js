@@ -24,20 +24,27 @@ const getTickets = async (req, res) => {
 
 // --- CRIAR NOVO CHAMADO ---
 const createTicket = async (req, res) => {
-  const { title } = req.body;
+  const { eventName, standName, standAddress, description } = req.body;
   const currentUser = req.user; // Contém { id, role }
 
   // Verificação de segurança e validação
   if (currentUser.role !== 'ADMIN') {
     return res.status(403).json({ error: 'Apenas administradores podem criar chamados.' });
   }
-  if (!title || title.trim() === '') {
-    return res.status(400).json({ error: 'O título do chamado é obrigatório.' });
+  if (!eventName || eventName.trim() === '' || !standName || standName.trim() === '' || !description || description.trim() === '') {
+    return res.status(400).json({ error: 'Nome do evento, nome do estande e descrição são obrigatórios.' });
   }
 
   try {
     const newTicket = await prisma.ticket.create({
-      data: { title, status: 'ABERTO', userId: currentUser.id },
+      data: {
+        eventName,
+        standName,
+        standAddress, // pode ser nulo
+        description,
+        status: 'ABERTO',
+        userId: currentUser.id
+      },
       include: { user: { select: { name: true } }, technician: { select: { name: true } } },
     });
 

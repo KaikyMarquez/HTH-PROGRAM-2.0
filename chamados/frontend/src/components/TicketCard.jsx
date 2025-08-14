@@ -27,13 +27,21 @@ function TicketCard({ ticket, user, onUpdateStatus, onDelete, urgencyStyle }) {
             <span className="text-xs text-gray-500">{new Date(ticket.createdAt).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}</span>
           </div>
 
-          <h2 className="mb-3 text-xl font-bold text-gray-100">{ticket.title}</h2>
-          
-          <div className="space-y-1 text-sm text-gray-400">
-            <p><span className="font-semibold">Criado por:</span> {ticket.user?.name || 'Sistema'}</p>
+          <p className="mb-2 truncate text-lg" title={ticket.eventName}><span className="font-bold text-sky-400">EVENTO:</span> <span className="text-gray-100">{ticket.eventName}</span></p>
+          <p className="mb-1 text-sm"><span className="font-bold text-sky-400">ESTANDE:</span> <span className="text-emerald-400">{ticket.standName}</span></p>
+          {ticket.standAddress && <p className="mb-3 text-xs"><span className="font-bold text-sky-400">ENDEREÇO:</span> <span className="text-gray-400">{ticket.standAddress}</span></p>}
+          <div className="mb-4">
+            <p className="font-bold text-sky-400 text-sm">DESCRIÇÃO:</p>
+            <p className="text-sm text-gray-300 line-clamp-3">{ticket.description}</p>
+          </div>
+<br />
+<br />
+
+          <div className="mt-auto space-y-1 text-sm text-gray-400">
             {ticket.technician && (
               <p className="font-bold text-cyan-400"><span className="font-semibold text-gray-400">Atendido por:</span> {ticket.technician.name}</p>
             )}
+            <p><span className="font-semibold">Criado por:</span> {ticket.user?.name || 'Sistema'}</p>
           </div>
         </div>
 
